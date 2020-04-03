@@ -78,6 +78,10 @@ class Ship {
 
 class Player {
 
+	public static int distanceShips(int[] myPosition, int[] enemyPosition) {
+		return Math.max(Math.abs(myPosition[0] - enemyPosition[0]), Math.abs(myPosition[1] - enemyPosition[1]));
+	}
+
 	public static void main(String args[]) {
 		Scanner in = new Scanner(System.in);
 		int width = in.nextInt();
@@ -98,6 +102,7 @@ class Player {
 
 		int startX = 0, startY = 0;
 		boolean foundStart = false;
+		int enemyX = 0, enemyY = 13;
 
 		for (int i = 0; i < height; i++) {
 			for (int j = 0; j < width; j++) {
@@ -119,7 +124,10 @@ class Player {
 
 		Ship myShip = new Ship(new int[] { startX, startY }, ' ', myId);
 
+		// chargeValue of Torpedo, Sonar, Silence
+		int[] chargeToSoSi = new int[] { 0, 0, 0 };
 		// game loop
+		String enemyDir = "";
 		while (true) {
 			int x = in.nextInt();
 			int y = in.nextInt();
@@ -134,17 +142,58 @@ class Player {
 				in.nextLine();
 			}
 			String opponentOrders = in.nextLine();
+			String[] opponentOrdersArray = opponentOrders.split(" ");
+			if (opponentOrdersArray.length > 1)
+				// if silence, then the prev dir will applied
+				enemyDir = opponentOrdersArray[1];
+			switch (enemyDir) {
+			case "E":
+				enemyX += 1;
+				break;
+			case "S":
+				enemyY += 1;
+				break;
+			case "W":
+				enemyX -= 1;
+				break;
+			case "N":
+				enemyY -= 1;
+				break;
+			default:
+				break;
+			}
+
+			System.err.println("Enemy poz: " + enemyX + " " + enemyY);
 
 			System.err.println(x);
 			System.err.println(y);
 			System.err.println(sonarResult);
 			System.err.println(opponentOrders);
 
+			String chargeString = "";
 			boolean canMove = myShip.move(cellValues);
-			if (canMove)
-				System.out.println("MOVE " + myShip.getDir() + " TORPEDO");
+			if (canMove) {
+				if (chargeToSoSi[0] < 3) {
+					chargeString = "TORPEDO";
+					chargeToSoSi[0]++;
+				} else if (chargeToSoSi[1] < 4) {
+					chargeString = "SONAR";
+					chargeToSoSi[1]++;
+				} else if (chargeToSoSi[2] < 6) {
+					chargeString = "SILENCE";
+					chargeToSoSi[2]++;
+				}
 
-			else {
+				System.err.println("Charges: " + chargeToSoSi[0] + " " + chargeToSoSi[1] + " " + chargeToSoSi[2]);
+				// if enemy is near, fire
+				/*
+				 * if ((distanceShips(myShip.getPosition(), new int[] { enemyX, enemyY }) <= 4)
+				 * && (chargeToSoSi[0] == 3)) { System.out.println( "TORPEDO " + enemyX + " " +
+				 * enemyY + "|" + "MOVE " + myShip.getDir() + " " + chargeString); // 4 charge
+				 * needed for torpedo sometimes..fault I think chargeToSoSi[0] = 0; } else
+				 */
+				System.out.println("MOVE " + myShip.getDir() + " " + chargeString);
+			} else {
 				// surface mechanism
 				for (int i = 0; i < height; i++) {
 					for (int j = 0; j < width; j++) {
@@ -155,12 +204,15 @@ class Player {
 				}
 				System.out.println("SURFACE");
 			}
-			/*
-			 * for (int i = 0; i < height; i++) { for (int j = 0; j < width; j++) {
-			 * System.err.print(cellValues[j][i]); if (j == 14) System.err.print("\n");
-			 * 
-			 * } }
-			 */
+
+			for (int i = 0; i < height; i++) {
+				for (int j = 0; j < width; j++) {
+					System.err.print(cellValues[j][i]);
+					if (j == 14)
+						System.err.print("\n");
+
+				}
+			}
 
 			System.err.println(myShip);
 		}
