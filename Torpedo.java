@@ -47,24 +47,38 @@ class Ship {
 		return "Ship [position=" + Arrays.toString(position) + ", dir=" + dir + ", id=" + id + "]";
 	}
 
+	public boolean isDeadlock(char[][] cellValues, int wantedX, int wantedY) {
+		if (((wantedX + 1) < cellValues.length) && (cellValues[wantedY][wantedX + 1] == '.')) {
+			return false;
+		} else if (((wantedY + 1) < cellValues.length) && (cellValues[wantedY + 1][wantedX] == '.')) {
+			return false;
+		} else if (((wantedX - 1) > -1) && (cellValues[wantedY][wantedX - 1] == '.')) {
+			return false;
+		} else if (((wantedY - 1) > -1) && (cellValues[wantedY - 1][wantedX] == '.')) {
+			return false;
+		} else
+			return true;
+	}
+
 	public boolean move(char[][] cellValues) {
 		int[] startPosition = this.getPosition();
 		System.err.println("Actual poz before move: " + startPosition[0] + " " + startPosition[1]);
 		int x = startPosition[0];
 		int y = startPosition[1];
-		if (((x + 1) < cellValues.length) && (cellValues[y][x + 1] == '.')) {
+		if (((x + 1) < cellValues.length) && !isDeadlock(cellValues, x + 1, y) && (cellValues[y][x + 1] == '.')) {
 			this.setPosition(new int[] { x + 1, y });
 			this.setDir('E');
 			cellValues[y][x + 1] = 'B';
-		} else if (((y + 1) < cellValues.length) && (cellValues[y + 1][x] == '.')) {
+		} else if (((y + 1) < cellValues.length) && !isDeadlock(cellValues, x, y + 1)
+				&& (cellValues[y + 1][x] == '.')) {
 			this.setPosition(new int[] { x, y + 1 });
 			this.setDir('S');
 			cellValues[y + 1][x] = 'B';
-		} else if (((x - 1) > -1) && (cellValues[y][x - 1] == '.')) {
+		} else if (((x - 1) > -1) && !isDeadlock(cellValues, x - 1, y) && (cellValues[y][x - 1] == '.')) {
 			this.setPosition(new int[] { x - 1, y });
 			this.setDir('W');
 			cellValues[y][x - 1] = 'B';
-		} else if (((y - 1) > -1) && (cellValues[y - 1][x] == '.')) {
+		} else if (((y - 1) > -1) && !isDeadlock(cellValues, x, y - 1) && (cellValues[y - 1][x] == '.')) {
 			this.setPosition(new int[] { x, y - 1 });
 			this.setDir('N');
 			cellValues[y - 1][x] = 'B';
@@ -172,51 +186,45 @@ class Player {
 			System.err.println(opponentOrders);
 			String chargeString = "";
 
-			if ((distanceShips(myShip.getPosition(), new int[] { enemyX, enemyY }) <= 4) && (chargeToSoSi[0] == 3)) {
-				System.out.println("TORPEDO " + enemyX + " " + enemyY);
-				chargeToSoSi[0] = -1;
-			} else {
+			boolean canMove = myShip.move(cellValues);
+			if (canMove) {
+				if (chargeToSoSi[0] < 3) {
+					chargeString = "TORPEDO";
+					chargeToSoSi[0]++;
+				} else if (chargeToSoSi[1] < 4) {
+					chargeString = "SONAR";
+					chargeToSoSi[1]++;
+				} else if (chargeToSoSi[2] < 6) {
+					chargeString = "SILENCE";
+					chargeToSoSi[2]++;
 
-				boolean canMove = myShip.move(cellValues);
-				if (canMove) {
-					if (chargeToSoSi[0] < 3) {
-						chargeString = "TORPEDO";
-						chargeToSoSi[0]++;
-					} else if (chargeToSoSi[1] < 4) {
-						chargeString = "SONAR";
-						chargeToSoSi[1]++;
-					} else if (chargeToSoSi[2] < 6) {
-						chargeString = "SILENCE";
-						chargeToSoSi[2]++;
-
-					}
-
-					System.err.println("Charges: " + chargeToSoSi[0] + " " + chargeToSoSi[1] + " " + chargeToSoSi[2]);
-					// if enemy is near, fire
-
-					/*
-					 * if ((distanceShips(myShip.getPosition(), new int[] { enemyX, enemyY }) <= 4)
-					 * && (chargeToSoSi[0] == 3)) { System.out.println( "TORPEDO " + enemyX + " " +
-					 * enemyY + "|" + "MOVE " + myShip.getDir() + " " + chargeString);
-					 * chargeToSoSi[0] = -1; } else
-					 */
-
-					// if (chargeToSoSi[2] == 6) {
-					// System.out.println("SILENCE " + myShip.getDir() + " 1");
-					// chargeToSoSi[2] = -1;
-					// } else
-					System.out.println("MOVE " + myShip.getDir() + " " + chargeString);
-				} else {
-					// surface mechanism
-					for (int yy = 0; yy < height; yy++) {
-						for (int xx = 0; xx < width; xx++) {
-							if ((cellValues[yy][xx] == 'B')
-									&& !(xx == myShip.getPosition()[0] && yy == myShip.getPosition()[1]))
-								cellValues[yy][xx] = '.';
-						}
-					}
-					System.out.println("SURFACE");
 				}
+
+				System.err.println("Charges: " + chargeToSoSi[0] + " " + chargeToSoSi[1] + " " + chargeToSoSi[2]);
+				// if enemy is near, fire
+
+				/*
+				 * if ((distanceShips(myShip.getPosition(), new int[] { enemyX, enemyY }) <= 4)
+				 * && (chargeToSoSi[0] == 3)) { System.out.println( "TORPEDO " + enemyX + " " +
+				 * enemyY + "|" + "MOVE " + myShip.getDir() + " " + chargeString);
+				 * chargeToSoSi[0] = -1; } else
+				 */
+
+				// if (chargeToSoSi[2] == 6) {
+				// System.out.println("SILENCE " + myShip.getDir() + " 1");
+				// chargeToSoSi[2] = -1;
+				// } else
+				System.out.println("MOVE " + myShip.getDir() + " " + chargeString);
+			} else {
+				// surface mechanism
+				for (int yy = 0; yy < height; yy++) {
+					for (int xx = 0; xx < width; xx++) {
+						if ((cellValues[yy][xx] == 'B')
+								&& !(xx == myShip.getPosition()[0] && yy == myShip.getPosition()[1]))
+							cellValues[yy][xx] = '.';
+					}
+				}
+				System.out.println("SURFACE");
 			}
 
 			for (int yy = 0; yy < height; yy++) {
