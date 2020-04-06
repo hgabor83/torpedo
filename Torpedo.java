@@ -275,18 +275,17 @@ class Player {
 
 			boolean canMove = myShip.move(cellValues);
 			if (canMove) {
-				if (chargeToSoSi[0] < 3) {
-					chargeString = "TORPEDO";
-					chargeToSoSi[0]++;
+
+				if (chargeToSoSi[2] < 6) {
+					chargeString = "SILENCE";
+					chargeToSoSi[2]++;
 				} else if (chargeToSoSi[1] < 4) {
 					chargeString = "SONAR";
 					chargeToSoSi[1]++;
-				} else if (chargeToSoSi[2] < 6) {
-					chargeString = "SILENCE";
-					chargeToSoSi[2]++;
-
+				} else if (chargeToSoSi[0] < 3) {
+					chargeString = "TORPEDO";
+					chargeToSoSi[0]++;
 				}
-
 				System.err.println("Charges: " + chargeToSoSi[0] + " " + chargeToSoSi[1] + " " + chargeToSoSi[2]);
 				// if enemy is near, fire
 
@@ -314,14 +313,12 @@ class Player {
 				System.out.println("SURFACE");
 			}
 
-			for (int yy = 0; yy < height; yy++) {
-				for (int xx = 0; xx < width; xx++) {
-					System.err.print(cellValues[yy][xx]);
-					if (xx == 14)
-						System.err.print("\n");
-
-				}
-			}
+			/*
+			 * for (int yy = 0; yy < height; yy++) { for (int xx = 0; xx < width; xx++) {
+			 * System.err.print(cellValues[yy][xx]); if (xx == 14) System.err.print("\n");
+			 * 
+			 * } }
+			 */
 
 			System.err.println(myShip);
 		}
