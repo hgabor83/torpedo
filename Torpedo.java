@@ -65,29 +65,115 @@ class Ship {
 		System.err.println("Actual poz before move: " + startPosition[0] + " " + startPosition[1]);
 		int x = startPosition[0];
 		int y = startPosition[1];
-		if (((x + 1) < cellValues.length) && !isDeadlock(cellValues, x + 1, y) && (cellValues[y][x + 1] == '.')) {
-			this.setPosition(new int[] { x + 1, y });
-			this.setDir('E');
-			cellValues[y][x + 1] = 'B';
-		} else if (((y + 1) < cellValues.length) && !isDeadlock(cellValues, x, y + 1)
-				&& (cellValues[y + 1][x] == '.')) {
-			this.setPosition(new int[] { x, y + 1 });
-			this.setDir('S');
-			cellValues[y + 1][x] = 'B';
-		} else if (((x - 1) > -1) && !isDeadlock(cellValues, x - 1, y) && (cellValues[y][x - 1] == '.')) {
-			this.setPosition(new int[] { x - 1, y });
-			this.setDir('W');
-			cellValues[y][x - 1] = 'B';
-		} else if (((y - 1) > -1) && !isDeadlock(cellValues, x, y - 1) && (cellValues[y - 1][x] == '.')) {
-			this.setPosition(new int[] { x, y - 1 });
-			this.setDir('N');
-			cellValues[y - 1][x] = 'B';
-		} else
+		List<Character> possibleDirs = new ArrayList<Character>();
+
+		// possible direction
+		if (((x + 1) < cellValues.length) && !isDeadlock(cellValues, x + 1, y) && (cellValues[y][x + 1] == '.'))
+			possibleDirs.add('E');
+
+		if (((y + 1) < cellValues.length) && !isDeadlock(cellValues, x, y + 1) && (cellValues[y + 1][x] == '.'))
+			possibleDirs.add('S');
+
+		if (((x - 1) > -1) && !isDeadlock(cellValues, x - 1, y) && (cellValues[y][x - 1] == '.'))
+			possibleDirs.add('W');
+
+		if (((y - 1) > -1) && !isDeadlock(cellValues, x, y - 1) && (cellValues[y - 1][x] == '.'))
+			possibleDirs.add('N');
+
+		System.err.print("Possible dirs: ");
+		for (Character character : possibleDirs) {
+			System.err.print(character);
+		}
+		System.err.println("");
+
+		if (possibleDirs.size() == 0)
 			return false;
+
+		// measure heuristic value of possible directions
+		int eastH = 0, southH = 0, westH = 0, northH = 0;
+
+		// east
+		if (possibleDirs.indexOf('E') != -1) {
+			for (int yy = 0; yy < cellValues.length; yy++)
+				for (int xx = x; xx < cellValues.length; xx++)
+					if (cellValues[yy][xx] == '.')
+						eastH++;
+		}
+
+		// south
+		if (possibleDirs.indexOf('S') != -1) {
+			for (int yy = y; yy < cellValues.length; yy++)
+				for (int xx = 0; xx < cellValues.length; xx++)
+					if (cellValues[yy][xx] == '.')
+						southH++;
+		}
+
+		// west
+		if (possibleDirs.indexOf('W') != -1) {
+			for (int yy = 0; yy < cellValues.length; yy++)
+				for (int xx = 0; xx < x; xx++)
+					if (cellValues[yy][xx] == '.')
+						westH++;
+		}
+
+		// north
+		if (possibleDirs.indexOf('N') != -1) {
+			for (int yy = 0; yy < y; yy++)
+				for (int xx = 0; xx < cellValues.length; xx++)
+					if (cellValues[yy][xx] == '.')
+						northH++;
+		}
+
+		// Random r = new Random();
+		// char chosenDir = possibleDirs.get(r.nextInt(possibleDirs.size()));
+
+		int max = eastH;
+		char chosenDir = 'E';
+		if (southH > max) {
+			max = southH;
+			chosenDir = 'S';
+		}
+		if (westH > max) {
+			max = westH;
+			chosenDir = 'W';
+		}
+		if (northH > max) {
+			max = northH;
+			chosenDir = 'N';
+		}
+
+		System.err.println("Heuristic values: E " + eastH + " S " + southH + " W " + westH + " N " + northH);
+		System.err.println("Chosen dir: " + chosenDir);
+
+		this.setDir(chosenDir);
+		switch (chosenDir) {
+		case 'E':
+			this.setPosition(new int[] { x + 1, y });
+			cellValues[y][x + 1] = 'B';
+			break;
+
+		case 'S':
+			this.setPosition(new int[] { x, y + 1 });
+			cellValues[y + 1][x] = 'B';
+			break;
+
+		case 'W':
+			this.setPosition(new int[] { x - 1, y });
+			cellValues[y][x - 1] = 'B';
+			break;
+
+		case 'N':
+			this.setPosition(new int[] { x, y - 1 });
+			cellValues[y - 1][x] = 'B';
+			break;
+
+		default:
+			break;
+		}
+
 		return true;
 
 	}
-
 }
 
 class Player {
@@ -138,6 +224,7 @@ class Player {
 		System.out.println(startX + " " + startY);
 
 		Ship myShip = new Ship(new int[] { startX, startY }, ' ', myId);
+		cellValues[startY][startX] = 'B';
 
 		// chargeValue of Torpedo, Sonar, Silence
 		int[] chargeToSoSi = new int[] { -1, -1, -1 };
@@ -210,11 +297,11 @@ class Player {
 				 * chargeToSoSi[0] = -1; } else
 				 */
 
-				// if (chargeToSoSi[2] == 6) {
-				// System.out.println("SILENCE " + myShip.getDir() + " 1");
-				// chargeToSoSi[2] = -1;
-				// } else
-				System.out.println("MOVE " + myShip.getDir() + " " + chargeString);
+				if (chargeToSoSi[2] == 6) {
+					System.out.println("SILENCE " + myShip.getDir() + " 1");
+					chargeToSoSi[2] = -1;
+				} else
+					System.out.println("MOVE " + myShip.getDir() + " " + chargeString);
 			} else {
 				// surface mechanism
 				for (int yy = 0; yy < height; yy++) {
