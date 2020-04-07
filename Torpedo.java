@@ -18,6 +18,38 @@ class Ship {
 		this.id = id;
 	}
 
+	// my sector
+	public int getSector() {
+		int sector = 0;
+		int sectorX = 0;
+		int sectorY = 0;
+
+		int[] position = this.getPosition();
+		sectorX = position[0] / 5;
+		sectorY = position[1] / 5;
+
+		if ((sectorX == 0) && (sectorY == 0))
+			sector = 1;
+		if ((sectorX == 1) && (sectorY == 0))
+			sector = 2;
+		if ((sectorX == 2) && (sectorY == 0))
+			sector = 3;
+		if ((sectorX == 0) && (sectorY == 1))
+			sector = 4;
+		if ((sectorX == 1) && (sectorY == 1))
+			sector = 5;
+		if ((sectorX == 2) && (sectorY == 1))
+			sector = 6;
+		if ((sectorX == 0) && (sectorY == 2))
+			sector = 7;
+		if ((sectorX == 1) && (sectorY == 2))
+			sector = 8;
+		if ((sectorX == 2) && (sectorY == 2))
+			sector = 9;
+
+		return sector;
+	}
+
 	public int[] getPosition() {
 		return position;
 	}
@@ -49,15 +81,21 @@ class Ship {
 
 	public boolean isDeadlock(char[][] cellValues, int wantedX, int wantedY) {
 		if (((wantedX + 1) < cellValues.length) && (cellValues[wantedY][wantedX + 1] == '.')) {
+			System.err.println("No deadlock east");
 			return false;
 		} else if (((wantedY + 1) < cellValues.length) && (cellValues[wantedY + 1][wantedX] == '.')) {
+			System.err.println("No deadlock south");
 			return false;
 		} else if (((wantedX - 1) > -1) && (cellValues[wantedY][wantedX - 1] == '.')) {
+			System.err.println("No deadlock west");
 			return false;
 		} else if (((wantedY - 1) > -1) && (cellValues[wantedY - 1][wantedX] == '.')) {
+			System.err.println("No deadlock north");
 			return false;
-		} else
+		} else {
+			System.err.println("DEADLOCK");
 			return true;
+		}
 	}
 
 	public boolean move(char[][] cellValues) {
@@ -174,12 +212,218 @@ class Ship {
 		return true;
 
 	}
+
+	public int silentMove(char[][] cellValues) {
+		int[] startPosition = this.getPosition();
+		System.err.println("Actual poz before silent move: " + startPosition[0] + " " + startPosition[1]);
+		int x = startPosition[0];
+		int y = startPosition[1];
+		List<Character> possibleDirs = new ArrayList<Character>();
+		boolean eastOK, southOK, westOK, northOK;
+		int moveCount = 5;
+		do {
+			// start with maximum 4
+			moveCount--;
+			eastOK = true;
+			southOK = true;
+			westOK = true;
+			northOK = true;
+			System.err.println("Investigating " + moveCount + " silent move possibility");
+			// possible direction check if they are ok, no island no Backwards
+			for (int i = 1; i <= moveCount; i++) {
+				System.err.println("IN FOR, i: " + i + " movecount: " + moveCount);
+				if (((x + i) >= cellValues.length) || isDeadlock(cellValues, x + i, y) || (cellValues[y][x + i] != '.')
+						|| !eastOK) {
+					System.err.println("EAST NOK");
+					eastOK = false;
+				}
+
+				if (((y + i) >= cellValues.length) || isDeadlock(cellValues, x, y + i) || (cellValues[y + i][x] != '.')
+						|| !southOK) {
+					System.err.println("SOUTH NOK");
+					southOK = false;
+				}
+
+				if (((x - i) <= -1) || isDeadlock(cellValues, x - i, y) || (cellValues[y][x - i] != '.') || !westOK) {
+					System.err.println("WEST NOK");
+					westOK = false;
+				}
+
+				if (((y - i) <= -1) || isDeadlock(cellValues, x, y - i) || (cellValues[y - i][x] != '.') || !northOK) {
+					System.err.println("NORTH NOK");
+					northOK = false;
+				}
+			}
+			if (eastOK)
+				possibleDirs.add('E');
+			if (southOK)
+				possibleDirs.add('S');
+			if (westOK)
+				possibleDirs.add('W');
+			if (northOK)
+				possibleDirs.add('N');
+			System.err.println("At moveCount " + moveCount + " the possible dirs are " + possibleDirs.toString());
+		} while (possibleDirs.size() == 0 && moveCount > 1);
+
+		System.err.print("Possible dirs: ");
+		for (Character character : possibleDirs) {
+			System.err.print(character);
+		}
+		System.err.println("");
+
+		if (possibleDirs.size() == 0)
+			return 0;
+
+		// measure heuristic value of possible directions
+		int eastH = 0, southH = 0, westH = 0, northH = 0;
+
+		// east
+		if (possibleDirs.indexOf('E') != -1) {
+			for (int yy = 0; yy < cellValues.length; yy++)
+				for (int xx = x; xx < cellValues.length; xx++)
+					if (cellValues[yy][xx] == '.')
+						eastH++;
+		}
+
+		// south
+		if (possibleDirs.indexOf('S') != -1) {
+			for (int yy = y; yy < cellValues.length; yy++)
+				for (int xx = 0; xx < cellValues.length; xx++)
+					if (cellValues[yy][xx] == '.')
+						southH++;
+		}
+
+		// west
+		if (possibleDirs.indexOf('W') != -1) {
+			for (int yy = 0; yy < cellValues.length; yy++)
+				for (int xx = 0; xx < x; xx++)
+					if (cellValues[yy][xx] == '.')
+						westH++;
+		}
+
+		// north
+		if (possibleDirs.indexOf('N') != -1) {
+			for (int yy = 0; yy < y; yy++)
+				for (int xx = 0; xx < cellValues.length; xx++)
+					if (cellValues[yy][xx] == '.')
+						northH++;
+		}
+
+		// Random r = new Random();
+		// char chosenDir = possibleDirs.get(r.nextInt(possibleDirs.size()));
+
+		int max = eastH;
+		char chosenDir = 'E';
+		if (southH > max) {
+			max = southH;
+			chosenDir = 'S';
+		}
+		if (westH > max) {
+			max = westH;
+			chosenDir = 'W';
+		}
+		if (northH > max) {
+			max = northH;
+			chosenDir = 'N';
+		}
+
+		System.err.println("Heuristic values: E " + eastH + " S " + southH + " W " + westH + " N " + northH);
+		System.err.println("Chosen dir: " + chosenDir);
+
+		this.setDir(chosenDir);
+
+		for (int i = 1; i <= moveCount; i++) {
+			switch (chosenDir) {
+			case 'E':
+				this.setPosition(new int[] { x + i, y });
+				cellValues[y][x + i] = 'B';
+				break;
+
+			case 'S':
+				this.setPosition(new int[] { x, y + i });
+				cellValues[y + i][x] = 'B';
+				break;
+
+			case 'W':
+				this.setPosition(new int[] { x - i, y });
+				cellValues[y][x - i] = 'B';
+				break;
+
+			case 'N':
+				this.setPosition(new int[] { x, y - i });
+				cellValues[y - i][x] = 'B';
+				break;
+
+			default:
+				break;
+			}
+		}
+		return moveCount;
+
+	}
+
 }
 
 class Player {
 
-	public static int distanceShips(int[] myPosition, int[] enemyPosition) {
+	private static int distanceShips(int[] myPosition, int[] enemyPosition) {
 		return Math.max(Math.abs(myPosition[0] - enemyPosition[0]), Math.abs(myPosition[1] - enemyPosition[1]));
+	}
+
+	private static int getSectorToSonar(int myS, char myD) {
+		int mySector = myS;
+		char myDir = myD;
+		int sectorToSonar = 1;
+
+		if (mySector == 1 && myDir == 'E')
+			sectorToSonar = 2;
+		if (mySector == 1 && myDir == 'S')
+			sectorToSonar = 4;
+		if (mySector == 2 && myDir == 'E')
+			sectorToSonar = 3;
+		if (mySector == 2 && myDir == 'S')
+			sectorToSonar = 5;
+		if (mySector == 2 && myDir == 'W')
+			sectorToSonar = 1;
+		if (mySector == 3 && myDir == 'W')
+			sectorToSonar = 2;
+		if (mySector == 3 && myDir == 'S')
+			sectorToSonar = 6;
+		if (mySector == 4 && myDir == 'E')
+			sectorToSonar = 5;
+		if (mySector == 4 && myDir == 'S')
+			sectorToSonar = 7;
+		if (mySector == 4 && myDir == 'N')
+			sectorToSonar = 1;
+		if (mySector == 5 && myDir == 'E')
+			sectorToSonar = 6;
+		if (mySector == 5 && myDir == 'S')
+			sectorToSonar = 8;
+		if (mySector == 5 && myDir == 'W')
+			sectorToSonar = 4;
+		if (mySector == 5 && myDir == 'N')
+			sectorToSonar = 2;
+		if (mySector == 6 && myDir == 'S')
+			sectorToSonar = 9;
+		if (mySector == 6 && myDir == 'W')
+			sectorToSonar = 5;
+		if (mySector == 6 && myDir == 'N')
+			sectorToSonar = 3;
+		if (mySector == 7 && myDir == 'E')
+			sectorToSonar = 8;
+		if (mySector == 7 && myDir == 'N')
+			sectorToSonar = 4;
+		if (mySector == 8 && myDir == 'E')
+			sectorToSonar = 9;
+		if (mySector == 8 && myDir == 'W')
+			sectorToSonar = 7;
+		if (mySector == 8 && myDir == 'N')
+			sectorToSonar = 5;
+		if (mySector == 9 && myDir == 'W')
+			sectorToSonar = 8;
+		if (mySector == 9 && myDir == 'N')
+			sectorToSonar = 6;
+		return sectorToSonar;
 	}
 
 	public static void main(String args[]) {
@@ -273,34 +517,80 @@ class Player {
 			System.err.println(opponentOrders);
 			String chargeString = "";
 
-			boolean canMove = myShip.move(cellValues);
-			if (canMove) {
+			// in case of turning, we should fire the right direction
+			char myDir = myShip.getDir();
+			// calculate the torpedo goal cells
+			int torpedoX = 0, torpedoY = 0;
+			int[] myPos = myShip.getPosition();
+			switch (myDir) {
+			case 'E':
+				torpedoX = myPos[0] + 4;
+				torpedoY = myPos[1];
+				break;
+			case 'S':
+				torpedoX = myPos[0];
+				torpedoY = myPos[1] + 4;
+				break;
+			case 'W':
+				torpedoX = myPos[0] - 4;
+				torpedoY = myPos[1];
+				break;
+			case 'N':
+				torpedoX = myPos[0];
+				torpedoY = myPos[1] - 4;
+				break;
 
-				if (chargeToSoSi[2] < 6) {
-					chargeString = "SILENCE";
-					chargeToSoSi[2]++;
+			default:
+				break;
+			}
+
+			// if ((chargeToSoSi[0] == 3) && sonarResult.equals("Y") && torpedoX > -1 &&
+			// torpedoX < 15 && torpedoY > -1
+			// && torpedoY < 15) {
+			// System.out.println("TORPEDO " + torpedoX + " " + torpedoY);
+			// } else
+			if (chargeToSoSi[2] == 6) {
+				int moveCount = myShip.silentMove(cellValues);
+				if (moveCount != 0) {
+					myDir = myShip.getDir();
+					System.out.println("SILENCE " + myDir + " " + moveCount);
+					chargeToSoSi[2] = -1;
+				} else {
+					// surface mechanism
+					for (int yy = 0; yy < height; yy++) {
+						for (int xx = 0; xx < width; xx++) {
+							if ((cellValues[yy][xx] == 'B')
+									&& !(xx == myShip.getPosition()[0] && yy == myShip.getPosition()[1]))
+								cellValues[yy][xx] = '.';
+						}
+					}
+					System.out.println("SURFACE");
+				}
+			} else if (myShip.move(cellValues)) {
+
+				if (chargeToSoSi[0] < 3) {
+					chargeString = "TORPEDO";
+					chargeToSoSi[0]++;
 				} else if (chargeToSoSi[1] < 4) {
 					chargeString = "SONAR";
 					chargeToSoSi[1]++;
-				} else if (chargeToSoSi[0] < 3) {
-					chargeString = "TORPEDO";
-					chargeToSoSi[0]++;
+				} else if (chargeToSoSi[2] < 6) {
+					chargeString = "SILENCE";
+					chargeToSoSi[2]++;
 				}
 				System.err.println("Charges: " + chargeToSoSi[0] + " " + chargeToSoSi[1] + " " + chargeToSoSi[2]);
-				// if enemy is near, fire
+				// myActualDir for moving
+				myDir = myShip.getDir();
 
-				/*
-				 * if ((distanceShips(myShip.getPosition(), new int[] { enemyX, enemyY }) <= 4)
-				 * && (chargeToSoSi[0] == 3)) { System.out.println( "TORPEDO " + enemyX + " " +
-				 * enemyY + "|" + "MOVE " + myShip.getDir() + " " + chargeString);
-				 * chargeToSoSi[0] = -1; } else
-				 */
-
-				if (chargeToSoSi[2] == 6) {
-					System.out.println("SILENCE " + myShip.getDir() + " 1");
-					chargeToSoSi[2] = -1;
-				} else
-					System.out.println("MOVE " + myShip.getDir() + " " + chargeString);
+				// if (chargeToSoSi[1] == 4) {
+				// let's sonar our directions next sector
+				// int mySector = myShip.getSector();
+				// int sectorToSonar = getSectorToSonar(mySector, myDir);
+				// System.out.println("SONAR " + sectorToSonar + " | MOVE " + myDir + " " +
+				// chargeString);
+				// chargeToSoSi[1] = -1;
+				// } else
+				System.out.println("MOVE " + myShip.getDir() + " " + chargeString);
 			} else {
 				// surface mechanism
 				for (int yy = 0; yy < height; yy++) {
@@ -313,12 +603,14 @@ class Player {
 				System.out.println("SURFACE");
 			}
 
-			/*
-			 * for (int yy = 0; yy < height; yy++) { for (int xx = 0; xx < width; xx++) {
-			 * System.err.print(cellValues[yy][xx]); if (xx == 14) System.err.print("\n");
-			 * 
-			 * } }
-			 */
+			for (int yy = 0; yy < height; yy++) {
+				for (int xx = 0; xx < width; xx++) {
+					System.err.print(cellValues[yy][xx]);
+					if (xx == 14)
+						System.err.print("\n");
+
+				}
+			}
 
 			System.err.println(myShip);
 		}
