@@ -205,8 +205,8 @@ class Player {
 		boolean foundStart = false;
 		int enemyX = 0, enemyY = 0;
 
-		for (int y = 0; y < height; y++) {
-			for (int x = 0; x < width; x++) {
+		for (int y = 7; y < height; y++) {
+			for (int x = 7; x < width; x++) {
 				if (cellValues[y][x] == '.') {
 					startX = x;
 					startY = y;
