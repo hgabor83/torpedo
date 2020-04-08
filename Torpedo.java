@@ -178,8 +178,41 @@ class Ship {
 
 class Player {
 
-	public static int distanceShips(int[] myPosition, int[] enemyPosition) {
-		return Math.max(Math.abs(myPosition[0] - enemyPosition[0]), Math.abs(myPosition[1] - enemyPosition[1]));
+	public static class Sector {
+		int id;
+		int middlePointX;
+		int middlePointY;
+
+		public Sector(int id, int middlePointX, int middlePointY) {
+			this.id = id;
+			this.middlePointX = middlePointX;
+			this.middlePointY = middlePointY;
+		}
+	}
+
+	public static int[] distanceShips(int[] myPosition, int enemySector) {
+		// x, y, distance
+		int[] enemyShipData = new int[3];
+		Sector[] sectors = new Sector[9];
+		sectors[0] = new Sector(1, 2, 2);
+		sectors[1] = new Sector(2, 7, 2);
+		sectors[2] = new Sector(3, 12, 2);
+		sectors[3] = new Sector(4, 2, 7);
+		sectors[4] = new Sector(5, 7, 7);
+		sectors[5] = new Sector(6, 12, 7);
+		sectors[6] = new Sector(7, 2, 12);
+		sectors[7] = new Sector(8, 7, 12);
+		sectors[8] = new Sector(9, 12, 12);
+		for (Sector sector : sectors) {
+			if (sector.id == enemySector) {
+				enemyShipData[0] = sector.middlePointX;
+				enemyShipData[1] = sector.middlePointY;
+				enemyShipData[2] = Math.max(Math.abs(myPosition[0] - enemyShipData[0]),
+						Math.abs(myPosition[1] - enemyShipData[1]));
+				break;
+			}
+		}
+		return enemyShipData;
 	}
 
 	public static void main(String args[]) {
@@ -227,10 +260,12 @@ class Player {
 		cellValues[startY][startX] = 'B';
 
 		// chargeValue of Torpedo, Sonar, Silence
-		int[] chargeToSoSi = new int[] { -1, -1, -1 };
+		int[] chargeToSoSi = new int[] { 0, 0, 0 };
 		// game loop
 		String enemyDir = "";
+		int turn = 0;
 		while (true) {
+			turn++;
 			int x = in.nextInt();
 			int y = in.nextInt();
 			int myLife = in.nextInt();
@@ -245,62 +280,70 @@ class Player {
 			}
 			String opponentOrders = in.nextLine();
 			String[] opponentOrdersArray = opponentOrders.split(" ");
-			if (opponentOrdersArray.length > 1)
-				// if silence, then the prev dir will applied
-				enemyDir = opponentOrdersArray[1];
-			switch (enemyDir) {
-			case "E":
-				enemyX += 1;
-				break;
-			case "S":
-				enemyY += 1;
-				break;
-			case "W":
-				enemyX -= 1;
-				break;
-			case "N":
-				enemyY -= 1;
-				break;
-			default:
-				break;
+			String opponentOrder = "";
+			int enemySector = 0;
+			for (int i = 0; i < opponentOrdersArray.length - 1; i++) {
+				if (opponentOrdersArray[i].contains("SURFACE"))
+					enemySector = Integer.valueOf(opponentOrdersArray[i + 1]);
 			}
-
-			System.err.println("Enemy poz: " + enemyX + " " + enemyY);
 
 			System.err.println(x);
 			System.err.println(y);
 			System.err.println(sonarResult);
 			System.err.println(opponentOrders);
 			String chargeString = "";
-
 			boolean canMove = myShip.move(cellValues);
 			if (canMove) {
+				System.err.println("Charges: " + chargeToSoSi[0] + " " + chargeToSoSi[1] + " " + chargeToSoSi[2]);
+				// if (enemySector != 0) {
+				// int[] enemyShipData = distanceShips(myShip.getPosition(), enemySector);
+				// enemyX = enemyShipData[0];
+				// enemyY = enemyShipData[1];
+				// int distanceShips = enemyShipData[2];
+//
+				// } else {
 
-				if (chargeToSoSi[2] < 6) {
-					chargeString = "SILENCE";
-					chargeToSoSi[2]++;
-				} else if (chargeToSoSi[1] < 4) {
-					chargeString = "SONAR";
-					chargeToSoSi[1]++;
-				} else if (chargeToSoSi[0] < 3) {
+				if ((myShip.getPosition()[0] + 3) < cellValues.length
+						&& cellValues[myShip.getPosition()[0] + 3][myShip.getPosition()[1]] != 'x') {
+					enemyX = myShip.getPosition()[0] + 3;
+					enemyY = myShip.getPosition()[1];
+				} else if ((myShip.getPosition()[0] - 3) > -1
+						&& cellValues[myShip.getPosition()[0] - 3][myShip.getPosition()[1]] != 'x') {
+					enemyX = myShip.getPosition()[0] - 3;
+					enemyY = myShip.getPosition()[1];
+				} else if ((myShip.getPosition()[1] + 3) < cellValues.length
+						&& cellValues[myShip.getPosition()[0]][myShip.getPosition()[1] + 3] != 'x') {
+					enemyX = myShip.getPosition()[0];
+					enemyY = myShip.getPosition()[1] + 3;
+				} else if ((myShip.getPosition()[1] - 3) > -1
+						&& cellValues[myShip.getPosition()[0]][myShip.getPosition()[1] - 3] != 'x') {
+					enemyX = myShip.getPosition()[0];
+					enemyY = myShip.getPosition()[1] - 3;
+				} else {
+					enemyX = 0;
+					enemyY = 0;
+				}
+				// }
+				System.err.println("Enemy poz: " + enemyX + " " + enemyY);
+				if ((chargeToSoSi[0] == 3) && (enemyX != 0)) {
+					chargeToSoSi[0] = 0;
 					chargeString = "TORPEDO";
 					chargeToSoSi[0]++;
-				}
-				System.err.println("Charges: " + chargeToSoSi[0] + " " + chargeToSoSi[1] + " " + chargeToSoSi[2]);
-				// if enemy is near, fire
-
-				/*
-				 * if ((distanceShips(myShip.getPosition(), new int[] { enemyX, enemyY }) <= 4)
-				 * && (chargeToSoSi[0] == 3)) { System.out.println( "TORPEDO " + enemyX + " " +
-				 * enemyY + "|" + "MOVE " + myShip.getDir() + " " + chargeString);
-				 * chargeToSoSi[0] = -1; } else
-				 */
-
-				if (chargeToSoSi[2] == 6) {
+					System.out.println("TORPEDO " + enemyX + " " + enemyY + " | " + "MOVE " + myShip.getDir() + " "
+							+ chargeString);
+				} else if (chargeToSoSi[2] == 6) {
 					System.out.println("SILENCE " + myShip.getDir() + " 1");
-					chargeToSoSi[2] = -1;
-				} else
+					chargeToSoSi[2] = 0;
+				} else {
+					if ((chargeToSoSi[2] < 6) && (turn % 4 == 0)) {
+						chargeString = "SILENCE";
+						chargeToSoSi[2]++;
+					} else if ((chargeToSoSi[0] < 3)) {
+						chargeString = "TORPEDO";
+						chargeToSoSi[0]++;
+					}
 					System.out.println("MOVE " + myShip.getDir() + " " + chargeString);
+				}
 			} else {
 				// surface mechanism
 				for (int yy = 0; yy < height; yy++) {
