@@ -47,6 +47,38 @@ class Ship {
 		return "Ship [position=" + Arrays.toString(position) + ", dir=" + dir + ", id=" + id + "]";
 	}
 
+	// my sector
+	public int getSector() {
+		int sector = 0;
+		int sectorX = 0;
+		int sectorY = 0;
+
+		int[] position = this.getPosition();
+		sectorX = position[0] / 5;
+		sectorY = position[1] / 5;
+
+		if ((sectorX == 0) && (sectorY == 0))
+			sector = 1;
+		if ((sectorX == 1) && (sectorY == 0))
+			sector = 2;
+		if ((sectorX == 2) && (sectorY == 0))
+			sector = 3;
+		if ((sectorX == 0) && (sectorY == 1))
+			sector = 4;
+		if ((sectorX == 1) && (sectorY == 1))
+			sector = 5;
+		if ((sectorX == 2) && (sectorY == 1))
+			sector = 6;
+		if ((sectorX == 0) && (sectorY == 2))
+			sector = 7;
+		if ((sectorX == 1) && (sectorY == 2))
+			sector = 8;
+		if ((sectorX == 2) && (sectorY == 2))
+			sector = 9;
+
+		return sector;
+	}
+
 	public boolean isDeadlock(char[][] cellValues, int wantedX, int wantedY) {
 		if (((wantedX + 1) < cellValues.length) && (cellValues[wantedY][wantedX + 1] == '.')) {
 			return false;
@@ -215,6 +247,46 @@ class Player {
 		return enemyShipData;
 	}
 
+	public static int getSectorToSonar(int mySector) {
+		int sectorToSonar = 0;
+		Random r = new Random();
+		List<Integer> possibleSectors = new ArrayList<>();
+
+		switch (mySector) {
+		case 1:
+			possibleSectors = Arrays.asList(2, 4);
+			break;
+		case 2:
+			possibleSectors = Arrays.asList(1, 3, 5);
+			break;
+		case 3:
+			possibleSectors = Arrays.asList(2, 6);
+			break;
+		case 4:
+			possibleSectors = Arrays.asList(1, 5, 7);
+			break;
+		case 5:
+			possibleSectors = Arrays.asList(2, 4, 6, 8);
+			break;
+		case 6:
+			possibleSectors = Arrays.asList(3, 5, 9);
+			break;
+		case 7:
+			possibleSectors = Arrays.asList(4, 8);
+			break;
+		case 8:
+			possibleSectors = Arrays.asList(7, 5, 9);
+			break;
+		case 9:
+			possibleSectors = Arrays.asList(8, 6);
+			break;
+		default:
+			break;
+		}
+		sectorToSonar = possibleSectors.get(r.nextInt(possibleSectors.size()));
+		return sectorToSonar;
+	}
+
 	public static void main(String args[]) {
 		Scanner in = new Scanner(System.in);
 		int width = in.nextInt();
@@ -264,6 +336,7 @@ class Player {
 		// game loop
 		String enemyDir = "";
 		int turn = 0;
+		int sectorToSonar = 0;
 		while (true) {
 			turn++;
 			int x = in.nextInt();
@@ -282,62 +355,103 @@ class Player {
 			String[] opponentOrdersArray = opponentOrders.split(" ");
 			String opponentOrder = "";
 			int enemySector = 0;
-			for (int i = 0; i < opponentOrdersArray.length - 1; i++) {
-				if (opponentOrdersArray[i].contains("SURFACE"))
-					enemySector = Integer.valueOf(opponentOrdersArray[i + 1]);
-			}
-
 			System.err.println(x);
 			System.err.println(y);
-			System.err.println(sonarResult);
+			System.err.println("Sonar result: " + sonarResult);
 			System.err.println(opponentOrders);
 			String chargeString = "";
+			int distanceShips = 100;
+			int[] enemyShipData = new int[3];
+			int enemySectorMiddlePointX = 0;
+			int enemySectorMiddlePointY = 0;
+			int mySector = 0;
+			boolean sonarSuccess = false;
 			boolean canMove = myShip.move(cellValues);
 			if (canMove) {
 				System.err.println("Charges: " + chargeToSoSi[0] + " " + chargeToSoSi[1] + " " + chargeToSoSi[2]);
-				// if (enemySector != 0) {
-				// int[] enemyShipData = distanceShips(myShip.getPosition(), enemySector);
-				// enemyX = enemyShipData[0];
-				// enemyY = enemyShipData[1];
-				// int distanceShips = enemyShipData[2];
-//
-				// } else {
+				sonarSuccess = Boolean.valueOf(sonarResult);
+				// we have got enemy sector with sonar
+				if (sonarSuccess) {
+					enemySector = sectorToSonar;
+					enemyShipData = distanceShips(myShip.getPosition(), enemySector);
+					System.err.println("xxxxxxxxxxxxxx Sonar info from enemy in sector: " + enemySector);
+					// reset SectorToSonar
+					sectorToSonar = 0;
+				} else
+					// if we got enemy sector from surface command
+					for (int i = 0; i < opponentOrdersArray.length - 1; i++) {
+						if (opponentOrdersArray[i].contains("SURFACE")) {
+							enemySector = Integer.valueOf(opponentOrdersArray[i + 1]);
+							System.err.println("xxxxxxxxxxxxxx Surface info from enemy in sector: " + enemySector);
+							break;
+						}
+					}
 
-				if ((myShip.getPosition()[0] + 3) < cellValues.length
-						&& cellValues[myShip.getPosition()[0] + 3][myShip.getPosition()[1]] != 'x') {
-					enemyX = myShip.getPosition()[0] + 3;
+				// got information about enemy with sonar command or surface command
+				if (enemySector != 0) {
+					enemyShipData = distanceShips(myShip.getPosition(), enemySector);
+					enemySectorMiddlePointX = enemyShipData[0];
+					enemySectorMiddlePointY = enemyShipData[1];
+					distanceShips = enemyShipData[2];
+					System.err.println("xxxxxxxxxxxxxx Enemy is in sector: " + enemySector + " , middle point is: "
+							+ enemySectorMiddlePointX + " " + enemySectorMiddlePointY + " , distance is: "
+							+ distanceShips);
+				}
+
+				// distance estimation with surface command
+				if (distanceShips <= 4) {
+					enemyX = enemySectorMiddlePointX;
+					enemyY = enemySectorMiddlePointY;
+					// if no enemy position info, then fire randomly
+				} else if ((myShip.getPosition()[0] + 4) < cellValues.length
+						&& cellValues[myShip.getPosition()[1]][myShip.getPosition()[0] + 4] != 'x') {
+					enemyX = myShip.getPosition()[0] + 4;
 					enemyY = myShip.getPosition()[1];
-				} else if ((myShip.getPosition()[0] - 3) > -1
-						&& cellValues[myShip.getPosition()[0] - 3][myShip.getPosition()[1]] != 'x') {
-					enemyX = myShip.getPosition()[0] - 3;
+				} else if ((myShip.getPosition()[0] - 4) > -1
+						&& cellValues[myShip.getPosition()[1]][myShip.getPosition()[0] - 4] != 'x') {
+					enemyX = myShip.getPosition()[0] - 4;
 					enemyY = myShip.getPosition()[1];
-				} else if ((myShip.getPosition()[1] + 3) < cellValues.length
-						&& cellValues[myShip.getPosition()[0]][myShip.getPosition()[1] + 3] != 'x') {
+				} else if ((myShip.getPosition()[1] + 4) < cellValues.length
+						&& cellValues[myShip.getPosition()[1] + 4][myShip.getPosition()[0]] != 'x') {
 					enemyX = myShip.getPosition()[0];
-					enemyY = myShip.getPosition()[1] + 3;
-				} else if ((myShip.getPosition()[1] - 3) > -1
-						&& cellValues[myShip.getPosition()[0]][myShip.getPosition()[1] - 3] != 'x') {
+					enemyY = myShip.getPosition()[1] + 4;
+				} else if ((myShip.getPosition()[1] - 4) > -1
+						&& cellValues[myShip.getPosition()[1] - 4][myShip.getPosition()[0]] != 'x') {
 					enemyX = myShip.getPosition()[0];
-					enemyY = myShip.getPosition()[1] - 3;
+					enemyY = myShip.getPosition()[1] - 4;
 				} else {
 					enemyX = 0;
 					enemyY = 0;
 				}
 				// }
 				System.err.println("Enemy poz: " + enemyX + " " + enemyY);
-				if ((chargeToSoSi[0] == 3) && (enemyX != 0)) {
+				System.err.println("Cellvalue at enemy poz: " + cellValues[enemyY][enemyX]);
+				// if sonar and torpedo is ready
+				if (chargeToSoSi[1] == 4 && chargeToSoSi[0] == 3) {
+					mySector = myShip.getSector();
+					sectorToSonar = getSectorToSonar(mySector);
+					System.out
+							.println("MOVE " + myShip.getDir() + " " + chargeString + " | " + "SONAR " + sectorToSonar);
+					chargeToSoSi[1] = 0;
+					// torpedo is charged, there is target, sonar is not charged
+				} else if ((chargeToSoSi[0] == 3) && (enemyX != 0) && chargeToSoSi[1] < 4) {
 					chargeToSoSi[0] = 0;
-					chargeString = "TORPEDO";
-					chargeToSoSi[0]++;
-					System.out.println("TORPEDO " + enemyX + " " + enemyY + " | " + "MOVE " + myShip.getDir() + " "
-							+ chargeString);
+					chargeString = "SILENCE";
+					chargeToSoSi[2]++;
+					System.out.println("MOVE " + myShip.getDir() + " " + chargeString + " | " + "TORPEDO " + enemyX
+							+ " " + enemyY);
+					// if ready to go silence
 				} else if (chargeToSoSi[2] == 6) {
 					System.out.println("SILENCE " + myShip.getDir() + " 1");
 					chargeToSoSi[2] = 0;
+					// if none of above, then move and charge
 				} else {
 					if ((chargeToSoSi[2] < 6) && (turn % 4 == 0)) {
 						chargeString = "SILENCE";
 						chargeToSoSi[2]++;
+					} else if ((chargeToSoSi[1] < 4) && (turn % 1 == 0)) {
+						chargeString = "SONAR";
+						chargeToSoSi[1]++;
 					} else if ((chargeToSoSi[0] < 3)) {
 						chargeString = "TORPEDO";
 						chargeToSoSi[0]++;
