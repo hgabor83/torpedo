@@ -645,50 +645,17 @@ class Player {
 					enemyY = enemyPosition[1];
 				}
 
-				if ((chargeToSoSi[0] == 3) && enemyX == 0) {
-					s++;
-					System.err.println("&&&&&&&&&&&&&& Torpedo is charged but no target s: " + s);
-				}
-
 				System.err.println("Enemy poz: " + enemyX + " " + enemyY);
 				System.err.println("Cellvalue at enemy poz: " + cellValues[enemyY][enemyX]);
-				// if sonar and torpedo is ready
-				if (chargeToSoSi[1] == 4 && chargeToSoSi[0] == 3) {
-					mySector = myShip.getSector();
-					// sectorToSonar = getSectorToSonar(mySector);
-					sectorToSonar = getSectorToSonar(mySector, myShip.getPosition());
-					chargeString = "SILENCE";
-					chargeToSoSi[2]++;
-					System.out
-							.println("MOVE " + myShip.getDir() + " " + chargeString + " | " + "SONAR " + sectorToSonar);
-					chargeToSoSi[1] = 0;
-					// torpedo is charged, there is target, sonar is not charged
-				} else if ((chargeToSoSi[0] == 3) && (enemyX != 0) && chargeToSoSi[1] < 4) {
-					chargeToSoSi[0] = 0;
-					if ((chargeToSoSi[2] < 6) && (turn % 4 == 0)) {
-						chargeString = "SILENCE";
-						chargeToSoSi[2]++;
-					} else if ((chargeToSoSi[1] < 4) && (turn % 1 == 0)) {
-						chargeString = "SONAR";
-						chargeToSoSi[1]++;
-					}
-					System.out.println("MOVE " + myShip.getDir() + " " + chargeString + " | " + "TORPEDO " + enemyX
-							+ " " + enemyY);
-					// if ready to go silence
-				} else if (chargeToSoSi[2] == 6) {
+
+				if (chargeToSoSi[2] == 6) {
 					System.out.println("SILENCE " + myShip.getDir() + " 1");
 					chargeToSoSi[2] = 0;
 					// if none of above, then move and charge
 				} else {
-					if ((chargeToSoSi[2] < 6) && (turn % 4 == 0)) {
+					if ((chargeToSoSi[2] < 6)) {
 						chargeString = "SILENCE";
 						chargeToSoSi[2]++;
-					} else if ((chargeToSoSi[1] < 4) && (turn % 1 == 0)) {
-						chargeString = "SONAR";
-						chargeToSoSi[1]++;
-					} else if ((chargeToSoSi[0] < 3)) {
-						chargeString = "TORPEDO";
-						chargeToSoSi[0]++;
 					}
 					System.out.println("MOVE " + myShip.getDir() + " " + chargeString);
 				}
