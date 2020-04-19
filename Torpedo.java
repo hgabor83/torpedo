@@ -8,10 +8,10 @@ import java.math.*;
  **/
 
 class Cell {
-	int x;
-	int y;
-	char value;
-	boolean walkable;
+	private int x;
+	private int y;
+	private char value;
+	private boolean walkable;
 
 	public Cell(int x, int y, char value) {
 		this.x = x;
@@ -55,8 +55,8 @@ class Cell {
 }
 
 class Heuristic {
-	int value;
-	char dir;
+	private int value;
+	private char dir;
 
 	public Heuristic(int value, char dir) {
 		this.value = value;
@@ -82,9 +82,9 @@ class Heuristic {
 }
 
 class Ship {
-	int[] position = new int[2];
-	char dir;
-	int id;
+	private int[] position = new int[2];
+	private char dir;
+	private int id;
 
 	public Ship(int[] position, char dir, int id) {
 		this.position = position;
@@ -119,38 +119,6 @@ class Ship {
 	@Override
 	public String toString() {
 		return "Ship [position=" + Arrays.toString(position) + ", dir=" + dir + ", id=" + id + "]";
-	}
-
-	// my sector
-	public int getSector() {
-		int sector = 0;
-		int sectorX = 0;
-		int sectorY = 0;
-
-		int[] position = this.getPosition();
-		sectorX = position[0] / 5;
-		sectorY = position[1] / 5;
-
-		if ((sectorX == 0) && (sectorY == 0))
-			sector = 1;
-		if ((sectorX == 1) && (sectorY == 0))
-			sector = 2;
-		if ((sectorX == 2) && (sectorY == 0))
-			sector = 3;
-		if ((sectorX == 0) && (sectorY == 1))
-			sector = 4;
-		if ((sectorX == 1) && (sectorY == 1))
-			sector = 5;
-		if ((sectorX == 2) && (sectorY == 1))
-			sector = 6;
-		if ((sectorX == 0) && (sectorY == 2))
-			sector = 7;
-		if ((sectorX == 1) && (sectorY == 2))
-			sector = 8;
-		if ((sectorX == 2) && (sectorY == 2))
-			sector = 9;
-
-		return sector;
 	}
 
 	public boolean move(char[][] cellValues) {
@@ -302,7 +270,6 @@ class Player {
 		int turn = 0;
 		boolean canMove = false;
 		int[] myPosition = new int[] { 0, 0 };
-		int mySector = 0;
 		char myDir = ' ';
 		String chargeString = "";
 		// game loop
@@ -326,7 +293,6 @@ class Player {
 			if (canMove) {
 				myDir = myShip.getDir();
 				myPosition = myShip.getPosition();
-				mySector = myShip.getSector();
 
 				// lets move silenced
 				if (chargeToSoSiMi[2] == 6) {
